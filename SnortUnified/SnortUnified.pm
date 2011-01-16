@@ -182,7 +182,7 @@ our $UNIFIED2_TYPES = {
         $UNIFIED2_EVENT_EXTENDED    => 'EXTENDED',
         $UNIFIED2_PERFORMANCE       => 'PERFORMANCE',
         $UNIFIED2_PORTSCAN          => 'PORTSCAN',
-        $UNIFIED2_IDS_EVENT_IPV6    => 'IPS6 EVENT',
+        $UNIFIED2_IDS_EVENT_IPV6    => 'IPV6 EVENT',
 };
 
 our $U2_PACKET_FLAG          = 1;
@@ -278,7 +278,7 @@ my $unified2_type_masks = {
         $UNIFIED2_PERFORMANCE    => '',
         $UNIFIED2_PORTSCAN       => '',
         # XXX - Need to track down real size of in6_addr ( using N3N3 right now )
-        $UNIFIED2_IDS_EVENT_IPV6 => 'N9N3N3n2c2',
+        $UNIFIED2_IDS_EVENT_IPV6 => 'N9N4N4n2c2',
 };
 
 my $unified2_header = [
@@ -573,6 +573,31 @@ sub readSnortUnified2Record() {
             $UF_Record->{$fld} = @record[$i++];
             debug("Field " . $fld . " is set to " . $UF_Record->{$fld});
         }
+        exec_handler("unified2_event", $UF_Record);
+    } elsif ($UF_Record->{'TYPE'} eq $UNIFIED2_IDS_EVENT_IPV6) {  # added, ms
+        debug("Handling an IDS IPv6 event from the unified2 file");
+        $UF_Record->{'FIELDS'} = $alert2_fields;
+        debug("Unpacking with mask " .  $unified2_type_masks->{$UNIFIED2_IDS_EVENT_IPV6});
+        @record = unpack($unified2_type_masks->{$UNIFIED2_IDS_EVENT_IPV6}, $buffer);
+
+        # N9 - first 9 uint32 fields:
+        foreach my $fld (@{$UF_Record->{'FIELDS'}}[0 .. 8]) {
+            $UF_Record->{$fld} = @record[$i++];
+            debug("Field " . $fld . " is set to " . $UF_Record->{$fld});
+        }
+        # N4N4 - the IPv6 addrs:
+        foreach my $fld (@{$UF_Record->{'FIELDS'}}[9 .. 10]) {
+			my @unp_tmp = unpack('n8', pack('N4', @record[$i .. $i+3]));
+            $UF_Record->{$fld} = sprintf('%x:%x:%x:%x:%x:%x:%x:%x', @unp_tmp);
+            $i += 4;
+            debug("Field " . $fld . " is set to " . $UF_Record->{$fld});
+        }
+        # n2c2 - last fields:
+        foreach my $fld (@{$UF_Record->{'FIELDS'}}[11 .. 14]) {
+            $UF_Record->{$fld} = @record[$i++];
+            debug("Field " . $fld . " is set to " . $UF_Record->{$fld});
+        }
+
         exec_handler("unified2_event", $UF_Record);
     } else {
         debug("Handling of type " . $UF_Record->{'TYPE'} . " not implemented yet");
