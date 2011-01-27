@@ -1,5 +1,17 @@
 #!/usr/bin/perl
 
+#
+# Notes:
+#  - needs perl module SnortUnified, cf. 'use lib' statement below
+#  - setting $copy_config causes every test to run with a new copy of the
+#    snort/etc directory. This only works if snort.conf uses absolute paths
+#    for rule directories.
+#    i.e. "include reference.config" is OK, but "include ../rules/local.rules" is not!
+#  - if a test has a .config file, then its contest is written into snort.conf
+#    for this all lines between "### tester.pl begin" and "### tester.pl end"
+#    are replaced
+#
+
 use strict;
 use warnings "all";
 use autodie;
@@ -7,7 +19,9 @@ use autodie;
 use Term::ANSIColor;
 use File::Temp;
 use File::Copy;
+use File::Copy::Recursive qw/dircopy/;
 use File::Path qw(remove_tree);
+use File::Basename;
 
 # SnortUnified is probably not in your standard INC -- so tell me where it is:
 use lib '/home/mschuett/NetBeansProjects/svn.haiti.cs/tools/SnortUnified';
@@ -15,34 +29,97 @@ use SnortUnified(qw(:ALL));
 #use SnortUnified::MetaData(qw(:ALL));
 #use Data::Dumper;
 
-my $debug = 0;
+my $copy_config = 1;
+my $debug = 1;
 my $snort = "/home/mschuett/tmp/snort/bin/snort";
-my $frompath = "/home/mschuett/tmp/tcpdumps/tests";
-my $fromconfig = "/home/mschuett/tmp/snort/etc/snort.conf";
+my $frompath = "/home/mschuett/NetBeansProjects/svn.haiti.cs/tools/tests";
+my $fromconfig = "/home/mschuett/tmp/snort/etc";
+
+sub edit_config {
+        my ($configdir, $testname) = @_;
+        my $testconf = "$configdir/${testname}.conf";
+        my $snortconf = "$configdir/snort.conf";
+        my $tmpfile = "$configdir/${snortconf}.tmp";
+        my @testlines;
+
+        if (! -e $testconf) {
+                # nothing to do here
+                return;
+        }
+
+        open my $file, '<', "$testconf";
+        while (<$file>) {
+                push(@testlines, $_);
+        };
+        close $file;
+
+        open my $newfile, '>', $tmpfile;
+        open $file, '<', "$snortconf";
+        while (<$file>) {
+                print $newfile $_;
+                if (/### tester\.pl begin/) {
+                        last;
+                }
+        };
+        print $newfile join("", @testlines);
+        while (<$file>) {
+                if (/### tester\.pl end/) {
+                        print $newfile $_;
+                        last;
+                }
+        };
+        while (<$file>) {
+                print $newfile $_;
+        };
+        close $file;
+        close $newfile;
+        rename $tmpfile, $snortconf;
+        print "rewrote snort.conf\n" if $debug;
+}
 
 sub make_basedir {
-        my ($frompath, $pcapfile, $specfile) = @_;
+        my ($src_dir, $testname) = @_;
+        #$frompath, $pcapfile, $specfile, $copy_config
         
         # create and populate temp. dir
         my $tmpdir = File::Temp->newdir("snort-test.XXXXX", CLEANUP => 0, TMPDIR => 1);
         my $base = $tmpdir->dirname;
+        my $configdir;
+        
+        print "source dir is \"$src_dir\"\n" if $debug;
         print "tmp dir is \"$base\"\n" if $debug;
 
-        copy("$frompath/$pcapfile", "$base/$pcapfile")
+        print "copy \"$src_dir/${testname}.pcap\" ... " if $debug;
+        copy("$src_dir/${testname}.pcap", "$base/${testname}.pcap")
                 or die "copy failed: $!";
-        copy("$frompath/$specfile", "$base/$specfile")
+        print "copy \"$src_dir/${testname}.spec\" ... " if $debug;
+        copy("$src_dir/${testname}.spec", "$base/${testname}.spec")
                 or die "copy failed: $!";
-        # does not work -- config file path implies path to classification.config etc.
-        # TODO: copy all required config files into $base
-        # copy("$fromconfig", "$base/snort.conf")
-                # or die "copy failed: $!";
 
-        return $base;
+        # check if config file exists:
+        if ( -e "$src_dir/${testname}.conf" ) {
+                print "copy \"$src_dir/${testname}.conf\" ... " if $debug;
+                copy("$src_dir/${testname}.conf", "$base/${testname}.conf")
+                        or die "copy failed: $!";
+        }
+        
+        if ($copy_config) {
+                $configdir = "$base/etc";
+                dircopy($fromconfig, $configdir);
+                print "copied config dir is \"$configdir\"\n" if $debug;
+        } else {
+                $configdir = $fromconfig;
+        }
+
+        return ($base, $configdir);
 }
 
 sub run_snort {
-        my ($snort, $fromconfig, $base, $pcap) = @_;
-        my $cmdline = "$snort -q -c $fromconfig -l $base -r $base/$pcap";
+        my ($snort, $testname, $basedir, $configdir) = @_;
+
+        my $pcapname = "$basedir/${testname}.pcap";
+        my $snortconf = "$configdir/snort.conf";
+        my $cmdline = "$snort -q -c $snortconf -l $basedir -r $pcapname";
         print "cmdline is \"$cmdline\"\n" if $debug;
 
         # execute snort
@@ -56,10 +133,11 @@ sub run_snort {
 }
 
 sub read_spec {
-        my ($base, $spec) = @_;
+        my ($base, $testname) = @_;
 
+        my $spec = "$base/${testname}.spec";
         my @lines;
-        open my $file, '<', "$base/$spec";
+        open my $file, '<', $spec;
         while (<$file>) {
                 chomp;
                 push(@lines, $_) if $_;  # ignores empty lines
@@ -109,54 +187,60 @@ sub eq_array {
 }
 
 sub run_testcase {
-        my ($pcapfile, $specfile) = @_;
-        my $base = make_basedir($frompath, $pcapfile, $specfile);
-        run_snort($snort, $fromconfig, $base, $pcapfile);
+        my ($src_dir, $testname) = @_;
+        #$pcapfile, $specfile, $configfile
+        
+        my ($basedir, $configdir) = make_basedir($src_dir, $testname);
+        
+        if ( -e "$src_dir/${testname}.conf") {
+                edit_config($configdir, $testname);
+        }
+        
+        run_snort($snort, $testname, $basedir, $configdir);
 
-        my @result = read_uf2($base);
-        my @spec = read_spec($base, $specfile);
+        my @result = read_uf2($basedir);
+        my @spec = read_spec($basedir, $testname);
 
         if (@spec ~~ @result) {
-                print "Test $pcapfile: ", colored ( "OK", 'green'), "\n";
-                remove_tree($base);
+                print "Test $testname: ", colored ( "OK", 'green'), "\n";
+                remove_tree($basedir);
                 return 0;
         } else {
-                print "Test $pcapfile: ", colored ( "Failed!", 'red'), "\n";
+                print "Test $testname: ", colored ( "Failed!", 'red'), "\n";
                 print "\tspec was:  " . (@spec   == 0 ? "-" : join(",", @spec)) . "\n";
                 print "\tresult is: " . (@result == 0 ? "-" : join(",", @result)) . "\n";
                 return 1;
         }
 }
 
+=head2
+
+Find all C<.spec> files in C<$frompath>.
+Return a list of testcases (i.e. only the base name of the pcap file).
+
+=cut
+
 sub get_testcases {
-        my @filelist = glob("*.spec");
+        my $frompath = shift;
+        
+        my @filelist = glob("$frompath/*.spec");
         my @testlist;
 
         foreach my $specfile (@filelist) {
-                my ($pcapfile) = ($specfile =~ /(.*)\.spec/);
+                my ($name,$path,$suffix) = fileparse($specfile, ".spec");
+                my $pcapfile = "${path}/${name}.pcap";
                 
                 if ( -f $pcapfile ) {
-                        push(@testlist, $pcapfile);
-                        print "found test files for: \"$pcapfile\"\n" if $debug;
+                        push(@testlist, $name);
+                        print "found test files for: \"$name\"\n" if $debug;
                 } else {
-                        print "Warning: found specification \"$specfile\" without expected PCAP \"$pcapfile\"\n";
+                        print "Warning: found specification \"${name}.spec\" without expected PCAP \"${name}.pcap\"\n";
                 }
         }
         return @testlist;
 }
 
-# my %testcase = {
-        # pcap => "pcap_rh_icmp",
-        # spec => "pcap_rh_icmp.spec",
-        # #config => ""
-        # };
-# TODO: loop for multiple test cases
-# TODO: collect all .spec files to get test cases automagically
-#my $pcapfile = "pcap_rh_icmp";
-#my $specfile = "${pcapfile}.spec";
-#run_testcase($pcapfile, $specfile);
-
-foreach my $pcapfile (get_testcases) {
-        run_testcase($pcapfile, "$pcapfile.spec");
+foreach my $testname (get_testcases($frompath)) {
+        run_testcase($frompath, $testname);
 }
 
