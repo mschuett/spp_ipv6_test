@@ -1,4 +1,4 @@
-#!/usr/bin/perl -I/home/mschuett/tmp/SnortUnified
+#!/usr/bin/perl
 
 use strict;
 use warnings "all";
@@ -8,6 +8,9 @@ use Term::ANSIColor;
 use File::Temp;
 use File::Copy;
 use File::Path qw(remove_tree);
+
+# SnortUnified is probably not in your standard INC -- so tell me where it is:
+use lib '/home/mschuett/NetBeansProjects/svn.haiti.cs/tools/SnortUnified';
 use SnortUnified(qw(:ALL));
 #use SnortUnified::MetaData(qw(:ALL));
 #use Data::Dumper;
@@ -156,5 +159,4 @@ sub get_testcases {
 foreach my $pcapfile (get_testcases) {
         run_testcase($pcapfile, "$pcapfile.spec");
 }
-
 

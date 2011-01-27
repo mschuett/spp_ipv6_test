@@ -3,7 +3,7 @@
 use SnortUnified(qw(:ALL));
 
 $file = shift;
-$debug = 1;
+$debug = 0;
 $UF_Data = {};
 $record = {};
 
