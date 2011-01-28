@@ -1,19 +1,42 @@
 #!/usr/bin/perl
 
-#
-# Notes:
-#  - needs perl module SnortUnified, cf. 'use lib' statement below
-#  - setting $copy_config causes every test to run with a new copy of the
-#    snort/etc directory. This only works if snort.conf uses absolute paths
-#    for rule directories.
-#    i.e. "include reference.config" is OK, but "include ../rules/local.rules" is not!
-#  - if a test has a .config file, then its contest is written into snort.conf
-#    for this all lines between "### tester.pl begin" and "### tester.pl end"
-#    are replaced
-#
+=head1 Snort Rule Tester
 
-use strict;
-use warnings "all";
+Test Snort preprocessors or rules by preparing a PCAP input and specifying an
+expected SID-output.
+Optionally add snort.conf options to use.
+
+=head1 Notes
+
+=over 1
+
+=item *
+
+needs perl module SnortUnified, cf. 'use lib' statement below
+
+=item *
+
+setting $copy_config causes every test to run with a new copy of the
+      snort/etc directory. This only works if snort.conf uses absolute paths
+      for rule directories.
+      i.e. "include reference.config" is OK, but "include ../rules/local.rules" is not!
+
+=item *
+
+if a test has a .config file, then its contest is written into snort.conf
+      for this all lines between "### tester.pl begin" and "### tester.pl end"
+      are replaced
+
+=item *
+
+if a test is successful its temporary directory is cleared -- but if it
+      fails its directory is kept for manual inspection and has to be removed later
+
+=back
+
+=cut
+
+use Modern::Perl;
 use autodie;
 
 use Term::ANSIColor;
@@ -29,11 +52,21 @@ use SnortUnified(qw(:ALL));
 #use SnortUnified::MetaData(qw(:ALL));
 #use Data::Dumper;
 
-my $copy_config = 1;
-my $debug = 1;
+my $debug = 0;
 my $snort = "/home/mschuett/tmp/snort/bin/snort";
 my $frompath = "/home/mschuett/NetBeansProjects/svn.haiti.cs/tools/tests";
 my $fromconfig = "/home/mschuett/tmp/snort/etc";
+
+=head1 Functions
+
+=head2 C<edit_config>
+
+If a C<.conf> file is provided, then its content is used for Snort's configuration.
+If C<snort.conf> contains the lines C<### tester.pl begin> and C<### tester.pl end>
+then everything between these lines is replaced by the test-specific config.
+Otherwise the test-specific config is appended at the end of C<snort.conf>.
+
+=cut
 
 sub edit_config {
         my ($configdir, $testname) = @_;
@@ -77,6 +110,13 @@ sub edit_config {
         print "rewrote snort.conf\n" if $debug;
 }
 
+=head2 C<make_basedir>
+
+Creates a temporary directory for the test run. The test files and all files
+in the C<snort.conf> directory are copied there.
+
+=cut
+
 sub make_basedir {
         my ($src_dir, $testname) = @_;
         #$frompath, $pcapfile, $specfile, $copy_config
@@ -84,7 +124,6 @@ sub make_basedir {
         # create and populate temp. dir
         my $tmpdir = File::Temp->newdir("snort-test.XXXXX", CLEANUP => 0, TMPDIR => 1);
         my $base = $tmpdir->dirname;
-        my $configdir;
         
         print "source dir is \"$src_dir\"\n" if $debug;
         print "tmp dir is \"$base\"\n" if $debug;
@@ -103,22 +142,26 @@ sub make_basedir {
                         or die "copy failed: $!";
         }
         
-        if ($copy_config) {
-                $configdir = "$base/etc";
-                dircopy($fromconfig, $configdir);
-                print "copied config dir is \"$configdir\"\n" if $debug;
-        } else {
-                $configdir = $fromconfig;
-        }
+        my $configdir = "$base/etc";
+        dircopy($fromconfig, $configdir);
+        print "copied config dir is \"$configdir\"\n" if $debug;
 
         return ($base, $configdir);
 }
+
+=head2 C<run_snort>
+
+Actually executes Snort using the temporary configuration directory and
+the test's PCAP.
+
+=cut
 
 sub run_snort {
         my ($snort, $testname, $basedir, $configdir) = @_;
 
         my $pcapname = "$basedir/${testname}.pcap";
         my $snortconf = "$configdir/snort.conf";
+        my $snort_output = "$basedir/snort.output";
         my $cmdline = "$snort -q -c $snortconf -l $basedir -r $pcapname";
         print "cmdline is \"$cmdline\"\n" if $debug;
 
@@ -129,8 +172,18 @@ sub run_snort {
             $output .= $_;
         }
         close($cmd);
-                #or die "Snort command failed: $!\nOutput was:\n".$output;
+
+        open my $file, '>', $snort_output;
+        print $file $output;
+        close($file);
 }
+
+=head2 C<read_spec>
+
+Read specification for curren test case.
+Returns array of SIDs.
+
+=cut
 
 sub read_spec {
         my ($base, $testname) = @_;
@@ -148,6 +201,13 @@ sub read_spec {
         print "spec    has $count events\n" if $debug;
         return @lines;
 }
+
+=head2 C<read_uf2>
+
+Find the C<snort.log> from the test run and decode its content with SnortUnified.
+Returns an array of SIDs.
+
+=cut
 
 sub read_uf2 {
         my ($base) = @_;
@@ -172,24 +232,14 @@ sub read_uf2 {
         return @lines;
 }
 
-sub eq_array {
-        my (@a, @b) = @_;
-        
-        if (@a != @b) { return 0; }
-        
-        for (my $i = @a-1; $i >=0; $i--) {
-                unless ($a[$i] == $b[$i]) {
-                        return 0;
-                }
-        }
+=head2 C<run_testcase>
 
-        return 1;
-}
+Run one testcase and print result.
+
+=cut
 
 sub run_testcase {
         my ($src_dir, $testname) = @_;
-        #$pcapfile, $specfile, $configfile
-        
         my ($basedir, $configdir) = make_basedir($src_dir, $testname);
         
         if ( -e "$src_dir/${testname}.conf") {
@@ -213,10 +263,9 @@ sub run_testcase {
         }
 }
 
-=head2
+=head2 C<get_testcases>
 
-Find all C<.spec> files in C<$frompath>.
-Return a list of testcases (i.e. only the base name of the pcap file).
+Find all tests in a given path.
 
 =cut
 
@@ -240,7 +289,41 @@ sub get_testcases {
         return @testlist;
 }
 
-foreach my $testname (get_testcases($frompath)) {
-        run_testcase($frompath, $testname);
+=head1 Command Line
+
+=over 1
+
+=item C<-d>
+
+enable debugging output (shows paths and commandline)
+
+=item C<test> ...
+
+run these test cases
+
+=item C<directory> ...
+
+run all tests in this directory
+
+=back
+
+=cut
+
+foreach my $opt (@ARGV) {
+        if ($opt =~ /-d/) {
+                $debug++;
+                next;
+        }
+        my ($name,$path,$suffix) = fileparse($opt, (".spec", ".pcap", ".conf"));
+        
+        if ( -d $path.$name ) {
+                foreach my $testname (get_testcases($path.$name)) {
+                        run_testcase($path.$name, $testname);
+                }
+        } elsif ( -e $path.$name.$suffix || -e $path.$name.".spec" ) {
+                run_testcase($path, $name);
+        } else {
+                print "Cannot handle argument \"$opt\"\n";
+        }
 }
 
