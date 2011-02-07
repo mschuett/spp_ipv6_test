@@ -70,13 +70,14 @@ Otherwise the test-specific config is appended at the end of C<snort.conf>.
 
 sub edit_config {
         my ($configdir, $testname) = @_;
-        my $testconf = "$configdir/${testname}.conf";
+        my $testconf = "$configdir/../${testname}.conf";
         my $snortconf = "$configdir/snort.conf";
-        my $tmpfile = "$configdir/${snortconf}.tmp";
+        my $tmpfile = "${snortconf}.tmp";
         my @testlines;
 
         if (! -e $testconf) {
                 # nothing to do here
+                print "no $testconf --> skip edit_config\n" if $debug;
                 return;
         }
 
@@ -241,10 +242,7 @@ Run one testcase and print result.
 sub run_testcase {
         my ($src_dir, $testname) = @_;
         my ($basedir, $configdir) = make_basedir($src_dir, $testname);
-        
-        if ( -e "$src_dir/${testname}.conf") {
-                edit_config($configdir, $testname);
-        }
+        edit_config($configdir, $testname);
         
         run_snort($snort, $testname, $basedir, $configdir);
 
@@ -252,11 +250,13 @@ sub run_testcase {
         my @spec = read_spec($basedir, $testname);
 
         if (@spec ~~ @result) {
-                print "Test $testname: ", colored ( "OK", 'green'), "\n";
+                #print "Test $testname: ", colored ( "OK", 'green'), "\n";
+                printf "Test %-15s %s\n", "$testname:", colored ( "OK", 'green');
                 remove_tree($basedir);
                 return 0;
         } else {
-                print "Test $testname: ", colored ( "Failed!", 'red'), "\n";
+                printf "Test %-15s %s\n", "$testname:", colored ( "Failed!", 'red');
+                #print "Test $testname: ", colored ( "Failed!", 'red'), "\n";
                 print "\tspec was:  " . (@spec   == 0 ? "-" : join(",", @spec)) . "\n";
                 print "\tresult is: " . (@result == 0 ? "-" : join(",", @result)) . "\n";
                 return 1;
