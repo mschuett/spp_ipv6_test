@@ -53,6 +53,7 @@ use SnortUnified(qw(:ALL));
 #use Data::Dumper;
 
 my $debug = 0;
+my $keepfiles = 0;
 my $snort = "/home/mschuett/tmp/snort/bin/snort";
 my $frompath = "/home/mschuett/NetBeansProjects/svn.haiti.cs/tools/tests";
 my $fromconfig = "/home/mschuett/tmp/snort/etc";
@@ -251,14 +252,20 @@ sub run_testcase {
 
         if (@spec ~~ @result) {
                 #print "Test $testname: ", colored ( "OK", 'green'), "\n";
-                printf "Test %-15s %s\n", "$testname:", colored ( "OK", 'green');
-                remove_tree($basedir);
+                printf "Test %-20s %s\n", "$testname:", colored ( "OK", 'green');
+				if ($keepfiles) {
+					print "keep files...\n" if $debug;
+				} else {
+					remove_tree($basedir);
+					print "removed path $basedir...\n" if $debug;
+				}
                 return 0;
         } else {
-                printf "Test %-15s %s\n", "$testname:", colored ( "Failed!", 'red');
+                printf "Test %-20s %s\n", "$testname:", colored ( "Failed!", 'red');
                 #print "Test $testname: ", colored ( "Failed!", 'red'), "\n";
                 print "\tspec was:  " . (@spec   == 0 ? "-" : join(",", @spec)) . "\n";
                 print "\tresult is: " . (@result == 0 ? "-" : join(",", @result)) . "\n";
+				print "keep files...\n" if $debug;
                 return 1;
         }
 }
@@ -297,6 +304,10 @@ sub get_testcases {
 
 enable debugging output (shows paths and commandline)
 
+=item C<-k>
+
+keep temporary files (useful for debugging)
+
 =item C<test> ...
 
 run these test cases
@@ -312,6 +323,10 @@ run all tests in this directory
 foreach my $opt (@ARGV) {
         if ($opt =~ /-d/) {
                 $debug++;
+                next;
+        }
+        if ($opt =~ /-k/) {
+                $keepfiles++;
                 next;
         }
         my ($name,$path,$suffix) = fileparse($opt, (".spec", ".pcap", ".conf"));
