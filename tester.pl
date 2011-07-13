@@ -230,7 +230,8 @@ sub read_uf2 {
                 or die "cannot open ".$filelist[0];
 
         while ( my $record = readSnortUnifiedRecord() ) {
-                next unless $record->{'TYPE'} eq $UNIFIED2_IDS_EVENT_IPV6;
+                next unless ($record->{'TYPE'} eq $UNIFIED2_IDS_EVENT_IPV6)
+						  or ($record->{'TYPE'} eq $UNIFIED2_IDS_EVENT);
                 
                 my ($gen, $id, $rev) =
                         ($record->{'sig_gen'}, $record->{'sig_id'}, $record->{'sig_rev'});
@@ -257,6 +258,7 @@ sub run_testcase {
         run_snort($snort, $testname, $basedir, $configdir);
 
         my @result = read_uf2($basedir);
+		@result = sort @result;
         my @spec = read_spec($basedir, $testname);
 
         if (@spec ~~ @result) {
