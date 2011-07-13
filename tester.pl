@@ -36,26 +36,32 @@ if a test is successful its temporary directory is cleared -- but if it
 
 =cut
 
-use Modern::Perl;
 use autodie;
 
 use Term::ANSIColor;
 use File::Temp;
 use File::Copy;
-use File::Copy::Recursive qw/dircopy/;
 use File::Path qw(remove_tree);
 use File::Basename;
 
-# SnortUnified is probably not in your standard INC -- so tell me where it is:
-use lib '/home/mschuett/NetBeansProjects/svn.haiti.cs/tools/SnortUnified';
+# Modern::Perl and File::Copy::Recursive are non-Core modules, so we provide a copy in ./lib
+# SnortUnified is probably not in your standard INC either:
+use lib './lib';
+use Modern::Perl;
+use File::Copy::Recursive qw/dircopy/;
 use SnortUnified(qw(:ALL));
 #use SnortUnified::MetaData(qw(:ALL));
 #use Data::Dumper;
 
+# for module path debugging:
+# print join "\n ", @INC;
+# print "\n";
+# print map {"$_ => $INC{$_}\n"} keys %INC;
+# print "\n";
+
 my $debug = 0;
 my $keepfiles = 0;
 my $snort = "/home/mschuett/tmp/snort/bin/snort";
-my $frompath = "/home/mschuett/NetBeansProjects/svn.haiti.cs/tools/tests";
 my $fromconfig = "/home/mschuett/tmp/snort/etc";
 
 =head1 Functions
@@ -121,7 +127,6 @@ in the C<snort.conf> directory are copied there.
 
 sub make_basedir {
         my ($src_dir, $testname) = @_;
-        #$frompath, $pcapfile, $specfile, $copy_config
         
         # create and populate temp. dir
         my $tmpdir = File::Temp->newdir("snort-test.XXXXX", CLEANUP => 0, TMPDIR => 1);
@@ -145,8 +150,12 @@ sub make_basedir {
         }
         
         my $configdir = "$base/etc";
-        dircopy($fromconfig, $configdir);
-        print "copied config dir is \"$configdir\"\n" if $debug;
+		if (! -e "${fromconfig}/snort.conf") {
+			print "Error: No snort.conf in \$fromconfig directory $fromconfig\n";
+		} else {
+			dircopy($fromconfig, $configdir);
+			print "copied config dir is \"$configdir\"\n" if $debug;
+		}
 
         return ($base, $configdir);
 }
