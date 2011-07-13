@@ -1,5 +1,7 @@
 #!/usr/bin/perl -I./SnortUnified
 
+use lib './lib';
+use Modern::Perl;
 use SnortUnified(qw(:ALL));
 use SnortUnified::MetaData(qw(:ALL));
 use POSIX qw(strftime);
@@ -51,6 +53,9 @@ sub prettyprint {
 	my ($field, $value) = @_;
 	#our %linktype;
 
+	if (!defined $field) { return "(undef field)"; }	
+	if (!defined $value) { return "(undef value)"; }	
+
 	switch($field) {
 		case "linktype" {
 			my $lt = defined($linktype{$value}) ? $linktype{$value} : 'unknown';
@@ -97,6 +102,8 @@ sub prettyprint {
 			return "$field=$value";
 		}
 	}
+	if (!defined $field) { return "(undef field, post)"; }	
+	if (!defined $value) { return "(undef value, post)"; }	
 }
 
 $uf_file = get_latest_file() || die "no files to get";
@@ -113,7 +120,7 @@ sub prettysigID {
 sub read_records() {
   while ( $record = readSnortUnifiedRecord() ) {
 	  print($UNIFIED2_TYPES->{$record->{'TYPE'}}.": ");
-	  foreach $field (@{$record->{'FIELDS'}}) {
+	  foreach my $field (@{$record->{'FIELDS'}}) {
 		  print prettyprint($field, $record->{$field})." ";
 		  # make sure to catch sigID at least once:
 		  if ($field eq 'sig_rev') {
