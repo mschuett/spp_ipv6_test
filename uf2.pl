@@ -78,8 +78,12 @@ sub prettyprint {
 			return "class=$value". (defined($name) ? "($name)" : "");
 		}
 		case /^sp$|^dp$/ {
-			my ($name,$aliases,$port,$proto) = getservbyport($value, undef);
-			return "$field=$value($name)";
+			my ($name,$aliases,$port,$proto) = getservbyport($value, '');
+			if (defined $name) {
+			  return "$field=$value($name)";
+		  } else {
+			  return "$field=$value";
+		  }
 		}
 		case /^sip$|^dip$/ {
 			if (!$resolveDNS) { return "$field=$value"; }
