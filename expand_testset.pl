@@ -22,6 +22,7 @@ sub print_help {
 	print "  --dstdir <dir>\tdirectory to create\n";
 	print "  --input <file>\tYAML file with testset description\n";
 	print "  --force       \tif dstdir exists: remove and recreate it\n";
+	print "  --latex       \texport testset as LaTeX table\n";
 	print "  --verbose     \tprint verbose messages\n";
 	exit 0;
 }
@@ -31,11 +32,13 @@ sub get_cl {
   my $srcdir = '.';
   my $dstdir = undef;
   my $force = 0;
+  my $latex = 0;
   my $options = GetOptions(
 	  "srcdir=s" => \$srcdir,
 	  "dstdir=s" => \$dstdir,
 	  "input=s"  => \$inputfile,
 	  "verbose"  => \$verbose,
+	  "latex"    => \$latex,
 	  "force"    => \$force,
 	  "help"     => \&print_help,
   );
@@ -59,7 +62,7 @@ sub get_cl {
 	  $dstdir = $name;
 	  print "set dstdir to '$dstdir'\n" if $verbose;
   }
-  return ($inputfile, $srcdir, $dstdir, $force);
+  return ($inputfile, $srcdir, $dstdir, $force, $latex);
 }
 
 sub yaml_read {
@@ -72,6 +75,28 @@ sub yaml_read {
   
   my $data = Load($yamltext);
   return $data;
+}
+
+sub export_latex {
+	my $inputfile = shift;
+	my $dataref = shift;
+	print "\\begin{longtable}[l]{llll}\n";
+	$inputfile =~ s/_/\\_/go;
+	print "\\caption{Testset \\texttt{$inputfile}}\\\\\n";
+	print "Test & .conf & pcap & SIDs\\tabularnewline\\hline\n\\endfirsthead\n";
+	print "Test & .conf & pcap & SIDs\\tabularnewline\\hline\n\\endhead\n";
+	foreach my $entry (@$dataref) {
+		my @spec = split /,/, $entry->{spec};
+		my $test = $entry->{test}; $test =~ s/_/\\_/go;
+		my $conf = $entry->{conf}; $conf =~ s/_/\\_/go;
+		my $pcap = $entry->{pcap}; $pcap =~ s/_/\\_/go;
+		print
+		  "\\texttt{$test} & ".
+		  "\\texttt{$conf} & ".
+		  "\\texttt{$pcap} & ".
+		  @spec . " \\tabularnewline\n" ;
+	}
+	print "\\end{longtable}\n";
 }
 
 sub check_filenames {
@@ -147,19 +172,24 @@ sub check_dstdir {
 }
 
 sub main {
-  my ($inputfile, $srcdir, $dstdir, $force) = get_cl;
+  my ($inputfile, $srcdir, $dstdir, $force, $latex) = get_cl;
   if ($verbose) {
 	  print "using these options:\n";
 	  print "inputfile: $inputfile\n";
 	  print "srcdir:    $srcdir\n";
 	  print "dstdir:    $dstdir\n";
 	  print "force:     $force\n\n";
+	  print "latex:     $latex\n\n";
   }
   
   my @data = @{yaml_read $inputfile};
-  check_filenames $srcdir,\@data;
-  check_dstdir $dstdir, $force;
-  make_files $srcdir, $dstdir, \@data;
+  if ($latex) {
+	  export_latex $inputfile, \@data;
+  } else {
+	  check_filenames $srcdir,\@data;
+	  check_dstdir $dstdir, $force;
+	  make_files $srcdir, $dstdir, \@data;
+  }
 }
 
 main;
