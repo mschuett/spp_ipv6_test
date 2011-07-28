@@ -25,7 +25,7 @@
   spec: "[1:100011:1], [1:100012:1], [1:100013:1], [1:100014:1], [1:100015:1]"
   test: extnum_one
 -
-  conf: icmp6_option_one.conf
+  conf: icmp6_option.conf
   pcap: single_ns.pcap
   spec: "[1:100020:1], [1:100023:1]"
   test: icmp6_option_one
@@ -33,57 +33,57 @@
   conf: ip6_flow.conf
   pcap: ip6_flow.pcap
   spec: "[1:100031:1], [1:100032:1]"
-  test: ip6_flow
+  test: flow
 -
   conf: ip6_flow.conf
   pcap: single_ns.pcap
   spec: "[1:100030:1]"
-  test: ip6_flow0
+  test: flow0
 -
-  conf: ip6_option_one.conf
+  conf: ip6_option.conf
   pcap: ip6_option_hbh.pcap
-  spec: "[1:100060:1], [1:100062:1], [1:100063:1], [1:100064:1], [1:100067:1], [1:100068:1], [1:100069:1], [1:100070:1]"
-  test: ip6_option_hbh
+  spec: "[1:100040:1], [1:100042:1], [1:100043:1], [1:100044:1], [1:100047:1], [1:100048:1], [1:100049:1], [1:100050:1]"
+  test: option_hbh
 -
-  conf: ip6_option_none.conf
+  conf: ip6_option.conf
   pcap: single_ns.pcap
   spec: "[1:100041:1], [1:100045:1], [1:100047:1]"
-  test: ip6_option_none
+  test: option_none
 -
-  conf: ip6_option_none.conf
+  conf: ip6_option.conf
   pcap: single_mld.pcap
   spec: "[1:100040:1], [1:100042:1], [1:100043:1], [1:100045:1], [1:100047:1]"
-  test: ip6_option_one
+  test: option_one
 -
   conf: ip6_rh_none.conf
   pcap: single_ns.pcap
   spec: "[1:100081:1]"
-  test: ip6_rh_none
+  test: rh_none
 -
   conf: ip6_rh_none.conf
   pcap: ip6_rh_one.pcap
   spec: "[1:100080:1], [1:100082:1]"
-  test: ip6_rh_one
+  test: rh_one
 -
   conf: ip6_rh_none.conf
   pcap: ip6_option_hbh.pcap
   spec: "[1:100081:1], [1:100082:1]"
-  test: ip6_rh_two
+  test: rh_two
 -
   conf: ip6_tclass.conf
   pcap: ip6_tclass_w-ce-bit.pcap
   spec: "[1:100090:1], [1:100091:1], [1:100092:1], [1:100094:1]"
-  test: ip6_tclass_w-ce-bit
+  test: tclass_w-ce-bit
 -
   conf: ip6_tclass.conf
   pcap: ip6_tclass_w-diffserv.pcap
   spec: "[1:100093:1]"
-  test: ip6_tclass_w-diffserv
+  test: tclass_w-diffserv
 -
   conf: ip6_tclass.conf
   pcap: ip6_tclass_w-diffserv_ce.pcap
   spec: "[1:100093:1], [1:100094:1]"
-  test: ip6_tclass_w-diffserv_ce
+  test: tclass_w-diffserv_ce
 -
   conf: ipv_6.conf
   pcap: single_udp4.pcap
