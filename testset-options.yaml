@@ -114,4 +114,19 @@
   conf: icmp6_nd.conf
   pcap: single_mld.pcap
   spec: "[1:100042:1]"
+-
+  test: ip6_ext_ordered_one
+  conf: extorder.conf
+  pcap: single_mld.pcap
+  spec: "[1:100050:1]"
+-
+  test: ip6_ext_ordered_two
+  conf: extorder.conf
+  pcap: ip6_option_hbh.pcap
+  spec: "[1:100050:1]"
+-
+  test: ip6_ext_ordered_none
+  conf: extorder.conf
+  pcap: ip6_rh_one.pcap
+  spec: "[1:100051:1]"
 
