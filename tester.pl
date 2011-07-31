@@ -70,8 +70,8 @@ my $fromconfig = "/home/mschuett/tmp/snort/etc";
 
 If a C<.conf> file is provided, then its content is used for Snort's configuration.
 If C<snort.conf> contains the lines C<### tester.pl begin> and C<### tester.pl end>
-then everything between these lines is replaced by the test-specific config.
-Otherwise the test-specific config is appended at the end of C<snort.conf>.
+then everything between these lines is deleted and an "include" statement for
+the test-specific config is inserted.
 
 =cut
 
@@ -80,7 +80,6 @@ sub edit_config {
         my $testconf = "$configdir/../${testname}.conf";
         my $snortconf = "$configdir/snort.conf";
         my $tmpfile = "${snortconf}.tmp";
-        my @testlines;
 
         if (! -e $testconf) {
                 # nothing to do here
@@ -88,21 +87,15 @@ sub edit_config {
                 return;
         }
 
-        open my $file, '<', "$testconf";
-        while (<$file>) {
-                push(@testlines, $_);
-        };
-        close $file;
-
         open my $newfile, '>', $tmpfile;
-        open $file, '<', "$snortconf";
+        open my $file, '<', "$snortconf";
         while (<$file>) {
                 print $newfile $_;
                 if (/### tester\.pl begin/) {
                         last;
                 }
         };
-        print $newfile join("", @testlines);
+        print $newfile "include $testconf\n";
         while (<$file>) {
                 if (/### tester\.pl end/) {
                         print $newfile $_;
