@@ -50,6 +50,7 @@ use lib './lib';
 use Modern::Perl;
 use File::Copy::Recursive qw/dircopy/;
 use SnortUnified(qw(:ALL));
+use IPC::Cmd qw(run);
 #use SnortUnified::MetaData(qw(:ALL));
 #use Data::Dumper;
 
@@ -71,7 +72,8 @@ my $fromconfig = "/home/mschuett/tmp/snort/etc";
 If a C<.conf> file is provided, then its content is used for Snort's configuration.
 If C<snort.conf> contains the lines C<### tester.pl begin> and C<### tester.pl end>
 then everything between these lines is deleted and an "include" statement for
-the test-specific config is inserted.
+the test-specific config is inserted (without these lines the "include"
+statement is appended at the end of the file).
 
 =cut
 
@@ -91,11 +93,20 @@ sub edit_config {
         open my $file, '<', "$snortconf";
         while (<$file>) {
                 print $newfile $_;
+				if ((/^config event_queue:/)
+				  && ((/max_queue (\d+)/ && $1 < 8) or (/log (\d+)/ && $1 < 8))) {
+					print "Warning: configured event_queue might be too small.\n";
+				}
                 if (/### tester\.pl begin/) {
                         last;
                 }
         };
+
+		# include test config, also ensure we have a usable log output
         print $newfile "include $testconf\n";
+		print $newfile "output unified2: filename snort.log, limit 128\n";
+		#print $newfile "config event_queue: max_queue 16 log 16\n";
+
         while (<$file>) {
                 if (/### tester\.pl end/) {
                         print $newfile $_;
@@ -163,22 +174,31 @@ the test's PCAP.
 sub run_snort {
         my ($snort, $testname, $basedir, $configdir) = @_;
 
-        my $pcapname = "$basedir/${testname}.pcap";
-        my $snortconf = "$configdir/snort.conf";
-        my $snort_output = "$basedir/snort.output";
-        my $cmdline = "$snort -q -c $snortconf -l $basedir -r $pcapname";
-        print "cmdline is \"$cmdline\"\n" if $debug;
+        my $pcapname   = "$basedir/${testname}.pcap";
+        my $snortconf  = "$configdir/snort.conf";
+        my $stdout_dst = "$basedir/snort.stdout";
+        my $stderr_dst = "$basedir/snort.stderr";
+        my $cmdline    = "$snort -q -c $snortconf -l $basedir -r $pcapname";
+		print "cmdline is \"$cmdline\"\n" if $debug;
 
         # execute snort
-        my $pid = open(my $cmd, "-|", $cmdline);
-        my $output = "";
-        while (<$cmd>) {
-            $output .= $_;
-        }
-        close($cmd);
+		my($success, $error_message, $full_buf, $stdout_buf, $stderr_buf)
+		  = run(command => $cmdline, verbose => 0);
 
-        open my $file, '>', $snort_output;
-        print $file $output;
+		if (!$success) {
+			print "Warning: Snort call failed. $error_message\n";
+		}
+
+		my ($file, $line);
+        open $file, '>', $stdout_dst;
+		foreach $line (@$stdout_buf) {
+			print $file $line;
+	    }
+        close($file);
+        open $file, '>', $stderr_dst;
+		foreach $line (@$stderr_buf) {
+			print $file $line;
+	    }
         close($file);
 }
 
