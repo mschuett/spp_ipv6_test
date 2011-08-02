@@ -1,8 +1,7 @@
 #! /usr/bin/perl
 
+use lib "./lib";
 use Modern::Perl;
-#use strict;
-#use warnings;
 
 use autodie;
 use Data::Dumper;
