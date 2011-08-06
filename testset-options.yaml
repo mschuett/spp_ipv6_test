@@ -36,6 +36,11 @@
   test: icmp6_option_none
 -
   conf: ip6_flow.conf
+  pcap: single_arp.pcap
+  spec: ""
+  test: flow_none
+-
+  conf: ip6_flow.conf
   pcap: ip6_flow.pcap
   spec: "[1:100031:1], [1:100032:1]"
   test: flow
@@ -76,14 +81,24 @@
   test: rh_none
 -
   conf: ip6_rh_none.conf
-  pcap: ip6_rh_one.pcap
+  pcap: ip6_rh_02.pcap
   spec: "[1:100080:1], [1:100082:1]"
-  test: rh_one
+  test: rh_one_02
+-
+  conf: ip6_rh_none.conf
+  pcap: ip6_rh_0.pcap
+  spec: "[1:100080:1]"
+  test: rh_one_0
 -
   conf: ip6_rh_none.conf
   pcap: ip6_option_hbh.pcap
   spec: "[1:100081:1], [1:100082:1]"
   test: rh_two
+-
+  conf: ip6_tclass.conf
+  pcap: single_arp.pcap
+  spec: ""
+  test: tclass_none
 -
   conf: ip6_tclass.conf
   pcap: ip6_tclass_w-ce-bit.pcap
@@ -104,6 +119,11 @@
   pcap: single_udp4.pcap
   spec: "[1:100101:1], [1:100102:1]"
   test: ipv_4
+-
+  conf: ipv_6.conf
+  pcap: single_arp.pcap
+  spec: ""
+  test: ipv_none
 -
   conf: ipv_6.conf
   pcap: single_ns.pcap
@@ -137,6 +157,6 @@
 -
   test: ip6_ext_ordered_none
   conf: extorder.conf
-  pcap: ip6_rh_one.pcap
+  pcap: ip6_rh_02.pcap
   spec: "[1:100051:1]"
 
