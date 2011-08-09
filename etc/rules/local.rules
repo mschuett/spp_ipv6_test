@@ -1,0 +1,21 @@
+# $Id: local.rules,v 1.13 2005/02/10 01:11:04 bmc Exp $
+# ----------------
+# LOCAL RULES
+# ----------------
+# This file intentionally does not come with signatures.  Put your local
+# additions here.
+
+# IPv6 test
+alert icmp any any -> any any (msg:"ICMPv4 PING in v4 pkt"; itype:8;   ipv: 4; classtype:attempted-recon; sid:100000; rev:1;)
+alert icmp any any -> any any (msg:"ICMPv4 PING in v6 pkt"; itype:8;   ipv: 6; classtype:attempted-recon; sid:100001; rev:1;)
+alert icmp any any -> any any (msg:"ICMPv6 PING in v4 pkt"; itype:128; ipv: 4; classtype:attempted-recon; sid:100002; rev:1;)
+alert icmp any any -> any any (msg:"ICMPv6 PING in v6 pkt"; itype:128; ipv: 6; classtype:attempted-recon; sid:100003; rev:1;)
+
+alert icmp any any -> any any (msg:"ICMPv4 PING in v4 pkt"; itype:8;   ipv: 6; ipv: 6; classtype:attempted-recon; sid:100004; rev:1;)
+#alert icmp any any -> any any (msg:"Router Advertisement flood"; itype:134; ipv:6; \
+	#detection_filter:track by_src, count 10, seconds 60; \
+	#classtype:denial-of-service; sid:100004; rev:1;)
+
+#alert ip any any -> any any (msg:"IPv6 Hop-by-Hop header"; \
+   #ipv: 6; ip6_exthdr: HOPOPT; \
+   #classtype:attempted-recon; sid:200004; rev:1;)

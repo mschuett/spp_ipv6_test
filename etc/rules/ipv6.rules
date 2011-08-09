@@ -1,0 +1,74 @@
+# Unusual Neighbor Discovery msgs
+alert icmp any any -> any any (ipv: 6; itype: 130<>138; ttl: <255; \
+    msg:"ICMPv6/NDP msg routed";    sid:124800; rev:1;)
+alert icmp any any -> any any (ipv: 6; itype: 148<>149; ttl: <255; \
+    msg:"ICMPv6/SEND msg routed";   sid:124801; rev:1;)
+alert icmp any any -> any any (ipv: 6; itype: 148<>149; ttl: 255;  \
+    msg:"ICMPv6/SEND msg";          sid:124802; rev:1;)
+alert icmp any any -> any any (ipv: 6; itype: 137; ttl: 255;       \
+    msg:"ICMPv6/NDP Redirect msg";  sid:124803; rev:1;)
+alert icmp any any -> any any (ipv: 6; itype: 138; ttl: 255;       \
+    msg:"ICMPv6 Router Renumbering";sid:124804; rev:1;)
+alert icmp any any -> any any (ipv: 6; itype: 139<>140;            \
+    msg:"ICMPv6 Node Information";  sid:124805; rev:1;)
+
+# ICMPv6 options
+alert icmp any any -> any any (ipv: 6; icmp6_nd;                   \
+    icmp6_nd_option: >10; icmp6_nd_option: <15;                    \
+    msg:"ICMPv6/NDP with SEND option"; sid:124806; rev:1;)
+alert icmp any any -> any any (ipv: 6; icmp6_nd;                   \
+    icmp6_nd_option: 4;                                            \
+    msg:"ICMPv6/NDP with Redirect option"; sid:124807; rev:1;)
+
+# MLD hop limits
+alert icmp any any -> any any (ipv: 6; itype: 130<>132; ttl: >1;   \
+    msg:"ICMPv6/MLD msg with invalid hop limit"; sid:124808; rev:1;)
+alert icmp any any -> any any (ipv: 6; itype: 143; ttl: >1;        \
+    msg:"ICMPv6/MLDv2 msg with invalid hop limit"; sid:124809; rev:1;)
+
+# Unusual extension headers
+alert ip   any any -> any any (ip6_extnum: > 3;                    \
+    msg:"IPv6: many ext. hdrs";     sid:124810; rev:1;)
+alert ip   any any -> any any (ipv: 6; fragbits: M; dsize: <640;  \
+    msg:"IPv6: short fragment";     sid:124811; rev:1;)
+alert ip   any any -> any any (ip6_exthdr: 50;                     \
+    msg:"IPv6+IPsec ESP";           sid:124812; rev:1;)
+alert ip   any any -> any any (ip6_exthdr: 51;                     \
+    msg:"IPv6+IPsec AH";            sid:124813; rev:1;)
+alert ip   any any -> any any (ip6_rh: 0;                          \
+    msg:"IPv6 RH0";                 sid:124814; rev:1;)
+alert ip   any any -> any any (ip6_ext_ordered: !;                 \
+    msg:"IPv6 Extension Headers not in order"; sid:124815; rev:1;)
+
+# Upper layer protocols
+alert udp  any any -> any 547 (ipv: 6;                             \
+    msg:"DHCPv6 request";           sid:124820; rev:1;)
+alert udp  any any -> any 546 (ipv: 6;                             \
+    msg:"DHCPv6 reply";             sid:124821; rev:1;)
+
+# Mobile IPv6
+alert ip   any any -> any any (ip6_rh: 2;                          \
+    msg:"Mobile IPv6: RH2";         sid:124830; rev:1;)
+alert ip   any any -> any any (ip6_option: 0xc9;                   \
+    msg:"Mobile IPv6: Home Address"; sid:124831; rev:1;)
+alert ip   any any -> any any (ip6_exthdr: 0x87;                   \
+    msg:"Mobile IPv6 Ext Hdr";     sid:124832; rev:1;)
+alert icmp any any -> any any (ipv: 6; itype: 144<>147;            \
+    msg:"ICMPv6 Mobile IPv6 msg";  sid:124833; rev:1;)
+alert icmp any any -> any any (icmp6_nd; icmp6_nd_option: 8;       \
+    msg:"ICMPv6/NDP with HomeAgent option"; sid:124834; rev:1;)
+
+# Use of experimental values
+alert ip   any any -> any any (ip6_rh: 253;                        \
+    msg:"Experimental IPv6 routing hdr"; sid:124841; rev:1;)
+alert ip   any any -> any any (ip6_rh: 254;                        \
+    msg:"Experimental IPv6 routing hdr"; sid:124842; rev:1;)
+alert icmp any any -> any any (icmp6_nd; icmp6_nd_option: 253;     \
+    msg:"Experimental ICMPv6/NDP option"; sid:124843; rev:1;)
+alert icmp any any -> any any (icmp6_nd; icmp6_nd_option: 254;     \
+    msg:"Experimental ICMPv6/NDP option"; sid:124844; rev:1;)
+
+ipvar MCASTv6 [ff00::/8]
+# smurfing
+alert icmp any any -> ff00::/8 any (msg:"ICMPv6 to multicast address"; sid:124850; rev:1;)
+
