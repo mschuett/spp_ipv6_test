@@ -1,0 +1,148 @@
+---
+-
+# the first tests use a single RA packet
+# using configurations with no options, router_mac, net_prefix options
+  conf: simple.conf
+  pcap: ra_normal_one.pcap
+  spec: "[248:1:1]"
+  test: ra_normal_one_simple
+-
+  conf: routermac.conf
+  pcap: ra_normal_one.pcap
+  spec: "[248:1:1]"
+  test: ra_normal_one_mac
+-
+  conf: subnet.conf
+  pcap: ra_normal_one.pcap
+  spec: "[248:1:1]"
+  test: ra_normal_one_subnet
+-
+  conf: routermac_and_subnet.conf
+  pcap: ra_normal_one.pcap
+  spec: "[248:1:1]"
+  test: ra_normal_one_macsubnet
+-
+# the same but with multiple RA packets
+  conf: simple.conf
+  pcap: ra_normal_mult.pcap
+  spec: "[248:1:1]"
+  test: ra_normal_mult_simple
+-
+  conf: routermac.conf
+  pcap: ra_normal_mult.pcap
+  spec: "[248:1:1]"
+  test: ra_normal_mult_mac
+-
+  conf: subnet.conf
+  pcap: ra_normal_mult.pcap
+  spec: "[248:1:1]"
+  test: ra_normal_mult_subnet
+-
+  conf: routermac_and_subnet.conf
+  pcap: ra_normal_mult.pcap
+  spec: "[248:1:1]"
+  test: ra_normal_mult_macsubnet
+-
+# now use an RA from a rogue MAC address
+  conf: simple.conf
+  pcap: ra_wrongmac_one.pcap
+  spec: "[248:1:1]"
+  test: ra_wrongmac_one_simple
+-
+  conf: routermac.conf
+  pcap: ra_wrongmac_one.pcap
+  spec: "[248:2:1]"
+  test: ra_wrongmac_one_mac
+-
+  conf: subnet.conf
+  pcap: ra_wrongmac_one.pcap
+  spec: "[248:1:1]"
+  test: ra_wrongmac_one_subnet
+-
+# and an RA announcing a wrong prefix
+  conf: simple.conf
+  pcap: ra_wrongsubnet_one.pcap
+  spec: "[248:1:1]"
+  test: ra_wrongsubnet_one_simple
+-
+  conf: routermac.conf
+  pcap: ra_wrongsubnet_one.pcap
+  spec: "[248:1:1]"
+  test: ra_wrongsubnet_one_mac
+-
+  conf: subnet.conf
+  pcap: ra_wrongsubnet_one.pcap
+  spec: "[248:1:1], [248:5:1]"
+  test: ra_wrongsubnet_one_subnet
+-
+# and combine both deviations
+  conf: routermac_and_subnet.conf
+  pcap: ra_wrongmacsubnet_one.pcap
+  spec: "[248:2:1], [248:5:1]"
+  test: ra_wrongmacsubnet
+-
+# packet with different MACs in L2 src and NDP ll-addr option
+  conf: simple.conf
+  pcap: ra_mismatch_mac_llopt.pcap
+  spec: "[248:1:1],[248:12:1]"
+  test: ra_mismatch_mac_llopt
+-
+# RAs with different prefix lenghts
+  conf: simple.conf
+  pcap: ra_changeprefix.pcap
+  spec: "[248:1:1],[248:3:1]"
+  test: ra_changeprefix
+-
+# RAs with different M-flag
+  conf: simple.conf
+  pcap: ra_changeflags.pcap
+  spec: "[248:1:1],[248:4:1]"
+  test: ra_changeflags
+-
+# RA with lifetime 0
+  conf: simple.conf
+  pcap: ra_lifetime0.pcap
+  spec: "[248:1:1],[248:6:1]"
+  test: ra_lifetime0
+-
+# only DAD without confirmation of new host
+  conf: simple.conf
+  pcap: dad.pcap
+  spec: "[248:7:1]"
+  test: dad
+-
+# full autoconf: DAD, RA, new host (for 3 IPs, 1 of them confirmed)
+  conf: simple.conf
+  pcap: autconf.pcap
+  spec: "[248:1:1],[248:7:1],[248:7:1],[248:7:1],[248:8:1]"
+  test: autconf_simple
+-
+# same with other router config
+  conf: routermac_and_subnet.conf
+  pcap: autconf.pcap
+  spec: "[248:1:1],[248:7:1],[248:7:1],[248:7:1],[248:8:1]"
+  test: autconf_raconf
+-
+# now use a host_mac config
+  conf: hostmac.conf
+  pcap: autconf.pcap
+  spec: "[248:1:1],[248:7:1],[248:7:1],[248:7:1],[248:8:1]"
+  test: autconf_hostmac
+-
+# with autoconf from other network
+  conf: simple.conf
+  pcap: autconf_othernet.pcap
+  spec: "[248:1:1],[248:7:1],[248:7:1],[248:7:1],[248:8:1],[248:8:1]"
+  test: autconf_othernet
+-
+# host_mac config with host from other net
+  conf: hostmac.conf
+  pcap: autconf_othernet.pcap
+  spec: "[248:1:1],[248:7:1],[248:7:1],[248:7:1],[248:9:1],[248:9:1]"
+  test: autconf_wrongnet
+-
+# part of a dos-new-ip6 run
+  conf: simple.conf
+  pcap: dos-new-ip6_part.pcap
+  spec: "[248:7:1],[248:7:1],[248:11:1],[248:11:1],[248:11:1],[248:11:1]"
+  test: dos-new-ip6
