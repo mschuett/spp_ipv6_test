@@ -276,7 +276,7 @@ sub run_testcase {
 
         if (@spec ~~ @result) {
                 #print "Test $testname: ", colored ( "OK", 'green'), "\n";
-                printf "Test %-20s %s\n", "$testname:", colored ( "OK", 'green');
+                printf "Test %-30s %s\n", "$testname:", colored ( "OK", 'green');
 				if ($keepfiles) {
 					print "keep files...\n" if $debug;
 				} else {
@@ -285,7 +285,7 @@ sub run_testcase {
 				}
                 return 0;
         } else {
-                printf "Test %-20s %s\n", "$testname:", colored ( "Failed!", 'red');
+                printf "Test %-30s %s\n", "$testname:", colored ( "Failed!", 'red');
                 #print "Test $testname: ", colored ( "Failed!", 'red'), "\n";
                 print "\tspec was:  " . (@spec   == 0 ? "-" : join(",", @spec)) . "\n";
                 print "\tresult is: " . (@result == 0 ? "-" : join(",", @result)) . "\n";
