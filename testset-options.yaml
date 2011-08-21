@@ -65,12 +65,12 @@
   spec: "[1:100060:1], [1:100062:1], [1:100063:1], [1:100065:1], [1:100067:1], [1:100072:1], [1:100073:1]"
   test: option_one
 -
-  conf: ip6_option_100060.conf
+  conf: ip6_opt_100060.conf
   pcap: single_mld.pcap
   spec: "[1:100060:1]"
   test: option_100060_one
 -
-  conf: ip6_option_100060.conf
+  conf: ip6_opt_100060.conf
   pcap: ip6_option_hbh.pcap
   spec: "[1:100060:1]"
   test: option_100060_hbh
@@ -101,17 +101,17 @@
   test: tclass_none
 -
   conf: ip6_tclass.conf
-  pcap: ip6_tclass_w-ce-bit.pcap
+  pcap: ip6_tclass_w-ce.pcap
   spec: "[1:100090:1], [1:100091:1], [1:100092:1], [1:100094:1]"
   test: tclass_w-ce
 -
   conf: ip6_tclass.conf
-  pcap: ip6_tclass_w-diffserv.pcap
+  pcap: ip6_tclass_w-ds.pcap
   spec: "[1:100093:1]"
   test: tclass_w-ds
 -
   conf: ip6_tclass.conf
-  pcap: ip6_tclass_w-diffserv_ce.pcap
+  pcap: tclass_w-ds_ce.pcap
   spec: "[1:100093:1], [1:100094:1]"
   test: tclass_w-ds-ce
 -
