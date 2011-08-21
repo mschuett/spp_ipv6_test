@@ -29,7 +29,7 @@ alert icmp any any -> any any (ipv: 6; itype: 143; ttl: >1;        \
 # Unusual extension headers
 alert ip   any any -> any any (ip6_extnum: > 3;                    \
     msg:"IPv6: many ext. hdrs";     sid:124810; rev:1;)
-alert ip   any any -> any any (ipv: 6; fragbits: !M; dsize: <640;  \
+alert ip   any any -> any any (ipv: 6; fragbits: M; dsize: <640;   \
     msg:"IPv6: short fragment";     sid:124811; rev:1;)
 alert ip   any any -> any any (ip6_exthdr: 50;                     \
     msg:"IPv6+IPsec ESP";           sid:124812; rev:1;)
@@ -97,4 +97,10 @@ event_filter gen_id 248, sig_id  1, type limit, track by_dst, count 1, seconds 6
 event_filter gen_id 248, sig_id  2, type limit, track by_dst, count 1, seconds 60
 event_filter gen_id 248, sig_id  7, type limit, track by_dst, count 1, seconds 60
 event_filter gen_id 248, sig_id 12, type limit, track by_dst, count 1, seconds 60
+
+### additional rate limits for decoder alerts
+# WARNING: IPv6 header includes an undefined option type
+event_filter gen_id 116, sig_id 279, type limit, track by_dst, count 1, seconds 60
+# WARNING: ICMPv6 router advertisement packet with the reachable time field set > 1 hour
+event_filter gen_id 116, sig_id 290, type limit, track by_dst, count 1, seconds 60
 

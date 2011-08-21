@@ -15,3 +15,55 @@
   pcap: dos-new-ip6_part.pcap
   spec: "[248:7:1],[248:7:1],[248:11:1],[248:11:1],[248:11:1],[248:11:1]"
   test: dos-new-ip6
+-
+  conf: simple.conf
+  pcap: alive6.pcap
+  spec: "[116:279:1],[116:432:1],[116:432:1]"
+  test: alive6
+-
+  conf: thc.conf
+  pcap: denial6_1_300pkts.pcap
+  spec: "[116:279:1]"
+  test: denial6_1
+-
+  conf: thc.conf
+  pcap: denial6_2_300pkts.pcap
+  spec: "[116:279:1]"
+  test: denial6_2
+-
+# the spec might be misleading, but the real host triggeres the event while the fake host is correctly ignored.
+  conf: simple.conf
+  pcap: fake_advertise6.pcap
+  spec: "[248:8:1]"
+  test: fake_advertise6
+-
+# as above, but using the -H -F options
+  conf: simple.conf
+  pcap: fake_advertise6_HF.pcap
+  spec: "[248:8:1]"
+  test: fake_advertise6_HF
+-
+  conf: simple.conf
+  pcap: flood_advertise6_300pkts.pcap
+  spec: "[1:124852:1]"
+  test: flood_advertise6
+-
+  conf: simple.conf
+  pcap: flood_router6_300pkts.pcap
+  spec: "[248:1:1],[116:290:1],[1:124850:1]"
+  test: flood_router6
+-
+  conf: simple.conf
+  pcap: redir6.pcap
+  spec: "[248:8:1],[248:8:1],[248:8:1],[248:8:1],[248:1:1],[1:124807:1],[1:124803:1]"
+  test: redir6
+-
+  conf: simple.conf
+  pcap: rsmurf6_1pkt.pcap
+  spec: "[116:277:1]"
+  test: rsmurf6
+-
+  conf: simple.conf
+  pcap: smurf6_1pkt.pcap
+  spec: "[116:432:1]"
+  test: smurf6
