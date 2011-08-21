@@ -29,7 +29,7 @@ alert icmp any any -> any any (ipv: 6; itype: 143; ttl: >1;        \
 # Unusual extension headers
 alert ip   any any -> any any (ip6_extnum: > 3;                    \
     msg:"IPv6: many ext. hdrs";     sid:124810; rev:1;)
-alert ip   any any -> any any (ipv: 6; fragbits: M; dsize: <640;  \
+alert ip   any any -> any any (ipv: 6; fragbits: !M; dsize: <640;  \
     msg:"IPv6: short fragment";     sid:124811; rev:1;)
 alert ip   any any -> any any (ip6_exthdr: 50;                     \
     msg:"IPv6+IPsec ESP";           sid:124812; rev:1;)
@@ -63,12 +63,38 @@ alert ip   any any -> any any (ip6_rh: 253;                        \
     msg:"Experimental IPv6 routing hdr"; sid:124841; rev:1;)
 alert ip   any any -> any any (ip6_rh: 254;                        \
     msg:"Experimental IPv6 routing hdr"; sid:124842; rev:1;)
-alert icmp any any -> any any (icmp6_nd; icmp6_nd_option: 253;     \
+alert ip   any any -> any any (icmp6_nd; icmp6_nd_option: 253;     \
     msg:"Experimental ICMPv6/NDP option"; sid:124843; rev:1;)
-alert icmp any any -> any any (icmp6_nd; icmp6_nd_option: 254;     \
+alert ip   any any -> any any (icmp6_nd; icmp6_nd_option: 254;     \
     msg:"Experimental ICMPv6/NDP option"; sid:124844; rev:1;)
 
-ipvar MCASTv6 [ff00::/8]
-# smurfing
-alert icmp any any -> ff00::/8 any (msg:"ICMPv6 to multicast address"; sid:124850; rev:1;)
+# Flooding
+alert icmp any any -> any any (ipv: 6; itype: 134;                 \
+    detection_filter: track by_dst, count 5, seconds 1;            \
+    msg:"ICMPv6/RA flooding";     sid:124850; rev:1;)
+alert icmp any any -> any any (ipv: 6; itype: 135;                 \
+    detection_filter: track by_dst, count 20, seconds 1;           \
+    msg:"ICMPv6/NS flooding";     sid:124851; rev:1;)
+alert icmp any any -> any any (ipv: 6; itype: 136;                 \
+    detection_filter: track by_dst, count 20, seconds 1;           \
+    msg:"ICMPv6/NA flooding";     sid:124852; rev:1;)
+
+# most of these rules are prone to flooding, so set up a few event filters:
+event_filter gen_id 1, sig_id 124800, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124801, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124802, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124803, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124804, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124805, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124806, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124807, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124850, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124851, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124852, type limit, track by_dst, count 1, seconds 60
+
+# event filters for the preprocessor alerts
+event_filter gen_id 248, sig_id  1, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 248, sig_id  2, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 248, sig_id  7, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 248, sig_id 12, type limit, track by_dst, count 1, seconds 60
 
