@@ -1,7 +1,7 @@
 ---
 -
   conf: simple.conf
-  pcap: thc-sendpees6_1sec.pcap
+  pcap: sendpees6_1sec.pcap
   spec: "[1:124806:1],[1:124851:1],[248:12:1]"
   test: sendpees6
 -
