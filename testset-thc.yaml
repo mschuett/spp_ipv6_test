@@ -1,14 +1,9 @@
 ---
 -
-  conf: thc.conf
-  pcap: thc-sendpees6_1pkt.pcap
-  spec: "[1:100200:1], [1:100201:1], [1:100202:1], [1:100203:1],[248:12:1]"
-  test: thc-sendpees6_1pkt
--
-  conf: thc.conf
+  conf: simple.conf
   pcap: thc-sendpees6_1sec.pcap
-  spec: "[1:100200:1], [1:100200:1], [1:100201:1], [1:100201:1], [1:100202:1], [1:100202:1], [1:100203:1], [1:100203:1], [1:100204:1], [1:100204:1],[248:12:1]"
-  test: thc-sendpees6_1sec
+  spec: "[1:124806:1],[1:124851:1],[248:12:1]"
+  test: sendpees6
 -
 # part of a dos-new-ip6 run
   conf: simple.conf
@@ -21,12 +16,12 @@
   spec: "[116:279:1],[116:432:1],[116:432:1]"
   test: alive6
 -
-  conf: thc.conf
+  conf: simple.conf
   pcap: denial6_1_300pkts.pcap
   spec: "[116:279:1]"
   test: denial6_1
 -
-  conf: thc.conf
+  conf: simple.conf
   pcap: denial6_2_300pkts.pcap
   spec: "[116:279:1]"
   test: denial6_2
