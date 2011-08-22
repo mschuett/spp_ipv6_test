@@ -79,6 +79,13 @@ alert icmp any any -> any any (ipv: 6; itype: 136;                 \
     detection_filter: track by_dst, count 20, seconds 1;           \
     msg:"ICMPv6/NA flooding";     sid:124852; rev:1;)
 
+# signs of THC toolkit
+alert ip   any any -> any any (ipv: 6;                             \
+    ip6_exthdr: 44; fragbits: !M; fragoffset: 0;                   \
+    msg:"IPv6: redundant fragment hdr"; sid:124860; rev:1;)
+alert icmp any any -> any any (ipv: 6; icmp_id: 57005;             \
+    msg:"ICMPv6 ID 0xdead (from THC?)"; sid:124861; rev:1;)
+
 # most of these rules are prone to flooding, so set up a few event filters:
 event_filter gen_id 1, sig_id 124800, type limit, track by_dst, count 1, seconds 60
 event_filter gen_id 1, sig_id 124801, type limit, track by_dst, count 1, seconds 60
@@ -88,19 +95,28 @@ event_filter gen_id 1, sig_id 124804, type limit, track by_dst, count 1, seconds
 event_filter gen_id 1, sig_id 124805, type limit, track by_dst, count 1, seconds 60
 event_filter gen_id 1, sig_id 124806, type limit, track by_dst, count 1, seconds 60
 event_filter gen_id 1, sig_id 124807, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124810, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124811, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124812, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124813, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124814, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124815, type limit, track by_dst, count 1, seconds 60
 event_filter gen_id 1, sig_id 124850, type limit, track by_dst, count 1, seconds 60
 event_filter gen_id 1, sig_id 124851, type limit, track by_dst, count 1, seconds 60
 event_filter gen_id 1, sig_id 124852, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124860, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 1, sig_id 124861, type limit, track by_dst, count 1, seconds 60
 
 # event filters for the preprocessor alerts
 event_filter gen_id 248, sig_id  1, type limit, track by_dst, count 1, seconds 60
 event_filter gen_id 248, sig_id  2, type limit, track by_dst, count 1, seconds 60
 event_filter gen_id 248, sig_id  7, type limit, track by_dst, count 1, seconds 60
+event_filter gen_id 248, sig_id  9, type limit, track by_dst, count 1, seconds 60
 event_filter gen_id 248, sig_id 12, type limit, track by_dst, count 1, seconds 60
 
-### additional rate limits for decoder alerts
-# WARNING: IPv6 header includes an undefined option type
+# additional rate limits for decoder alerts
+# IPv6 header includes an undefined option type
 event_filter gen_id 116, sig_id 279, type limit, track by_dst, count 1, seconds 60
-# WARNING: ICMPv6 router advertisement packet with the reachable time field set > 1 hour
+# ICMPv6 router adv. packet with the reachable time field set > 1 hour
 event_filter gen_id 116, sig_id 290, type limit, track by_dst, count 1, seconds 60
 
