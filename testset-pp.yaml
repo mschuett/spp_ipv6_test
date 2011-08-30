@@ -72,7 +72,7 @@
 -
   conf: subnet.conf
   pcap: ra_wrnet.pcap
-  spec: "[248:1:1], [248:5:1]"
+  spec: "[248:1:1],[248:5:1]"
   test: ra_wrongsubnet_one_subnet
 -
 # and combine both deviations
@@ -140,3 +140,15 @@
   pcap: autconf_othernet.pcap
   spec: "[248:1:1],[248:7:1],[248:7:1],[248:7:1],[248:9:1],[248:9:1]"
   test: autconf_wrongnet
+-
+# wrong length of hbh options
+  conf: simple.conf
+  pcap: ping_wroptlen.pcap
+  spec: "[116:279:1],[116:432:1],[248:14:1]"
+  test: ping_wroptlen
+-
+# ping with empty hbh ext (i.e. only padding)
+  conf: simple.conf
+  pcap: ping_hbh_pad.pcap
+  spec: "[116:432:1],[248:13:1]"
+  test: ping_padding

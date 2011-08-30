@@ -63,7 +63,8 @@ use IPC::Cmd qw(run);
 my $debug = 0;
 my $keepfiles = 0;
 my $snort = "/home/mschuett/tmp/snort/bin/snort";
-my $fromconfig = "/home/mschuett/tmp/snort/etc";
+#my $fromconfig = "/home/mschuett/tmp/snort/etc";
+my $fromconfig = "./etc";
 
 =head1 Functions
 
