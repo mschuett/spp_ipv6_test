@@ -2,9 +2,8 @@
 
 =head1 Snort Rule Tester
 
-Test Snort preprocessors or rules by preparing a PCAP input and specifying an
-expected SID-output.
-Optionally add snort.conf options to use.
+Test Snort preprocessors or rules by preparing a PCAP input, a snort.conf
+with custom options and specifying an expected SID-output.
 
 =head1 Notes
 
@@ -34,6 +33,32 @@ if a test is successful its temporary directory is cleared -- but if it
 
 =back
 
+=head1 Licence
+
+Copyright (c) 2011 Martin Schuette <info@mschuette.name>
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+   
+THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
 =cut
 
 use autodie;
@@ -43,6 +68,7 @@ use File::Temp;
 use File::Copy;
 use File::Path qw(remove_tree);
 use File::Basename;
+use Getopt::Long;
 
 # Modern::Perl and File::Copy::Recursive are non-Core modules, so we provide a copy in ./lib
 # SnortUnified is probably not in your standard INC either:
@@ -51,20 +77,39 @@ use Modern::Perl;
 use File::Copy::Recursive qw/dircopy/;
 use SnortUnified(qw(:ALL));
 use IPC::Cmd qw(run);
-#use SnortUnified::MetaData(qw(:ALL));
-#use Data::Dumper;
 
-# for module path debugging:
-# print join "\n ", @INC;
-# print "\n";
-# print map {"$_ => $INC{$_}\n"} keys %INC;
-# print "\n";
+my ($debug, $keepfiles, $snort, $fromconfig);
 
-my $debug = 0;
-my $keepfiles = 0;
-my $snort = "/home/mschuett/tmp/snort/bin/snort";
-#my $fromconfig = "/home/mschuett/tmp/snort/etc";
-my $fromconfig = "./etc";
+sub print_help {
+    print "available options:\n";
+    print "  --snort <file>\tthe Snort executable\n";
+    print "  --config <dir>\tthe configuration to use\n";
+    print "  --debug       \tprint debugging messages\n";
+    print "  --keepfiles   \tdo not delete temporary directory\n";
+    exit 0;
+}
+
+sub get_cl {
+  my $debug = 0;
+  my $keepfiles = 0;
+  my $snort = "/home/mschuett/tmp/snort/bin/snort";
+  my $fromconfig = "/home/mschuett/tmp/snort/etc";
+  #my $fromconfig = "./etc";
+
+  my $options = GetOptions(
+      "debug"     => \$debug,
+      "keepfiles" => \$keepfiles,
+      "snort=s"   => \$snort,
+      "config=s"  => \$fromconfig,
+  );
+  if (!$options) {
+      print "unrecognized options...\n";
+      print_help;
+  }
+  return ($debug, $keepfiles, $snort, $fromconfig);
+}
+
+
 
 =head1 Functions
 
@@ -94,19 +139,19 @@ sub edit_config {
         open my $file, '<', "$snortconf";
         while (<$file>) {
                 print $newfile $_;
-				if ((/^config event_queue:/)
-				  && ((/max_queue (\d+)/ && $1 < 8) or (/log (\d+)/ && $1 < 8))) {
-					print "Warning: configured event_queue might be too small.\n";
-				}
+                if ((/^config event_queue:/)
+                  && ((/max_queue (\d+)/ && $1 < 8) or (/log (\d+)/ && $1 < 8))) {
+                    print "Warning: configured event_queue might be too small.\n";
+                }
                 if (/### tester\.pl begin/) {
                         last;
                 }
         };
 
-		# include test config, also ensure we have a usable log output
+        # include test config, also ensure we have a usable log output
         print $newfile "include $testconf\n";
-		print $newfile "output unified2: filename snort.log, limit 128\n";
-		#print $newfile "config event_queue: max_queue 16 log 16\n";
+        print $newfile "output unified2: filename snort.log, limit 128\n";
+        #print $newfile "config event_queue: max_queue 16 log 16\n";
 
         while (<$file>) {
                 if (/### tester\.pl end/) {
@@ -155,12 +200,12 @@ sub make_basedir {
         }
         
         my $configdir = "$base/etc";
-		if (! -e "${fromconfig}/snort.conf") {
-			print "Error: No snort.conf in \$fromconfig directory $fromconfig\n";
-		} else {
-			dircopy($fromconfig, $configdir);
-			print "copied config dir is \"$configdir\"\n" if $debug;
-		}
+        if (! -e "${fromconfig}/snort.conf") {
+            print "Error: No snort.conf in \$fromconfig directory $fromconfig\n";
+        } else {
+            dircopy($fromconfig, $configdir);
+            print "copied config dir from \"$fromconfig\" to \"$configdir\"\n" if $debug;
+        }
 
         return ($base, $configdir);
 }
@@ -180,26 +225,26 @@ sub run_snort {
         my $stdout_dst = "$basedir/snort.stdout";
         my $stderr_dst = "$basedir/snort.stderr";
         my $cmdline    = "$snort -q -c $snortconf -l $basedir -r $pcapname";
-		print "cmdline is \"$cmdline\"\n" if $debug;
+        print "cmdline is \"$cmdline\"\n" if $debug;
 
         # execute snort
-		my($success, $error_message, $full_buf, $stdout_buf, $stderr_buf)
-		  = run(command => $cmdline, verbose => 0);
+        my($success, $error_message, $full_buf, $stdout_buf, $stderr_buf)
+          = run(command => $cmdline, verbose => 0);
 
-		if (!$success) {
-			print "Warning: Snort call failed. $error_message\n";
-		}
+        if (!$success) {
+            print "Warning: Snort call failed. $error_message\n";
+        }
 
-		my ($file, $line);
+        my ($file, $line);
         open $file, '>', $stdout_dst;
-		foreach $line (@$stdout_buf) {
-			print $file $line;
-	    }
+        foreach $line (@$stdout_buf) {
+            print $file $line;
+        }
         close($file);
         open $file, '>', $stderr_dst;
-		foreach $line (@$stderr_buf) {
-			print $file $line;
-	    }
+        foreach $line (@$stderr_buf) {
+            print $file $line;
+        }
         close($file);
 }
 
@@ -245,7 +290,7 @@ sub read_uf2 {
 
         while ( my $record = readSnortUnifiedRecord() ) {
                 next unless ($record->{'TYPE'} eq $UNIFIED2_IDS_EVENT_IPV6)
-						  or ($record->{'TYPE'} eq $UNIFIED2_IDS_EVENT);
+                          or ($record->{'TYPE'} eq $UNIFIED2_IDS_EVENT);
                 
                 my ($gen, $id, $rev) =
                         ($record->{'sig_gen'}, $record->{'sig_id'}, $record->{'sig_rev'});
@@ -272,25 +317,25 @@ sub run_testcase {
         run_snort($snort, $testname, $basedir, $configdir);
 
         my @result = read_uf2($basedir);
-		@result = sort @result;
+        @result = sort @result;
         my @spec = read_spec($basedir, $testname);
 
         if (@spec ~~ @result) {
                 #print "Test $testname: ", colored ( "OK", 'green'), "\n";
                 printf "Test %-30s %s\n", "$testname:", colored ( "OK", 'green');
-				if ($keepfiles) {
-					print "keep files...\n" if $debug;
-				} else {
-					remove_tree($basedir);
-					print "removed path $basedir...\n" if $debug;
-				}
+                if ($keepfiles) {
+                    print "keep files...\n" if $debug;
+                } else {
+                    remove_tree($basedir);
+                    print "removed path $basedir...\n" if $debug;
+                }
                 return 0;
         } else {
                 printf "Test %-30s %s\n", "$testname:", colored ( "Failed!", 'red');
                 #print "Test $testname: ", colored ( "Failed!", 'red'), "\n";
                 print "\tspec was:  " . (@spec   == 0 ? "-" : join(",", @spec)) . "\n";
                 print "\tresult is: " . (@result == 0 ? "-" : join(",", @result)) . "\n";
-				print "keep files...\n" if $debug;
+                print "keep files...\n" if $debug;
                 return 1;
         }
 }
@@ -345,15 +390,8 @@ run all tests in this directory
 
 =cut
 
+($debug, $keepfiles, $snort, $fromconfig) = get_cl();
 foreach my $opt (@ARGV) {
-        if ($opt =~ /-d/) {
-                $debug++;
-                next;
-        }
-        if ($opt =~ /-k/) {
-                $keepfiles++;
-                next;
-        }
         my ($name,$path,$suffix) = fileparse($opt, (".spec", ".pcap", ".conf"));
         
         if ( -d $path.$name ) {
