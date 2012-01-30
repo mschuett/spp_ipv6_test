@@ -13,17 +13,17 @@
 -
   conf: simple.conf
   pcap: alive6.pcap
-  spec: "[116:279:1],[116:432:1],[116:432:1],[1:124860:1],[1:124860:1],[248:14:1]"
+  spec: "[1:124860:1],[1:124860:1],[248:14:1]"
   test: alive6
 -
   conf: simple.conf
   pcap: denial6_1_300pkts.pcap
-  spec: "[116:279:1],[1:124860:1]"
+  spec: "[1:124860:1]"
   test: denial6_1
 -
   conf: simple.conf
   pcap: denial6_2_300pkts.pcap
-  spec: "[116:279:1],[1:124860:1],[248:14:1]"
+  spec: "[1:124860:1],[248:14:1]"
   test: denial6_2
 -
 # the spec might be misleading, but the real host triggeres the event while the fake host is correctly ignored.
@@ -45,7 +45,7 @@
 -
   conf: simple.conf
   pcap: flood_router6_300pkts.pcap
-  spec: "[248:1:1],[116:290:1],[1:124850:1]"
+  spec: "[248:1:1],[1:124850:1]"
   test: flood_router6
 -
   conf: simple.conf
@@ -55,10 +55,10 @@
 -
   conf: simple.conf
   pcap: rsmurf6_1pkt.pcap
-  spec: "[116:277:1],[1:124860:1]"
+  spec: "[1:124860:1]"
   test: rsmurf6
 -
   conf: simple.conf
   pcap: smurf6_1pkt.pcap
-  spec: "[116:432:1],[1:124860:1]"
+  spec: "[1:124860:1]"
   test: smurf6

@@ -151,7 +151,10 @@ sub edit_config {
         # include test config, also ensure we have a usable log output
         print $newfile "include $testconf\n";
         print $newfile "output unified2: filename snort.log, limit 128\n";
-        #print $newfile "config event_queue: max_queue 16 log 16\n";
+        # also set config to disable decoder alerts (many and changing)
+        # and to log events without a matching preprocessor.rules
+        print $newfile "config disable_decode_alerts\n";
+        print $newfile "config autogenerate_preprocessor_decoder_rules\n";
 
         while (<$file>) {
                 if (/### tester\.pl end/) {
@@ -214,6 +217,7 @@ sub make_basedir {
 
 Actually executes Snort using the temporary configuration directory and
 the test's PCAP.
+Return boolean indicating if the command executed without errors or not.
 
 =cut
 
@@ -232,7 +236,9 @@ sub run_snort {
           = run(command => $cmdline, verbose => 0);
 
         if (!$success) {
-            print "Warning: Snort call failed. $error_message\n";
+            print "Warning: Snort call failed ($error_message)\n";
+            #print "=== stdout: ===\n$$stdout_buf[0]\n";
+            print "=== stderr from Snort: ===\n$$stderr_buf[0]\n";
         }
 
         my ($file, $line);
@@ -246,6 +252,7 @@ sub run_snort {
             print $file $line;
         }
         close($file);
+        return $success;
 }
 
 =head2 C<read_spec>
@@ -314,7 +321,11 @@ sub run_testcase {
         my ($basedir, $configdir) = make_basedir($src_dir, $testname);
         edit_config($configdir, $testname);
         
-        run_snort($snort, $testname, $basedir, $configdir);
+        my $rc = run_snort($snort, $testname, $basedir, $configdir);
+        if (!$rc) {
+            print "Bailing out after Snort error...\n";
+            die();
+        }
 
         my @result = read_uf2($basedir);
         @result = sort @result;
