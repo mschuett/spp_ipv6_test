@@ -18,12 +18,12 @@
 -
   conf: simple.conf
   pcap: denial6_1_300pkts.pcap
-  spec: "[1:124860:1]"
+  spec: "[1:124860:1],[248:15:1],[248:16:1]"
   test: denial6_1
 -
   conf: simple.conf
   pcap: denial6_2_300pkts.pcap
-  spec: "[1:124860:1],[248:14:1]"
+  spec: "[1:124860:1],[248:14:1],[248:16:1]"
   test: denial6_2
 -
 # the spec might be misleading, but the real host triggeres the event while the fake host is correctly ignored.

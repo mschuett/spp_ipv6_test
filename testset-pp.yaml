@@ -150,5 +150,5 @@
 # ping with empty hbh ext (i.e. only padding)
   conf: simple.conf
   pcap: ping_hbh_pad.pcap
-  spec: "[248:13:1]"
+  spec: "[248:13:1],[248:16:1]"
   test: ping_padding
